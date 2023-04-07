@@ -8,44 +8,43 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 
 function ToDoList() {
-  const [toDoTask, setToDoTask] = useState();
+  const [toDoList, setToDoList] = useState();
+  const [inputText, setInputText] = useState();
 
   useEffect(() => {
+    const getToDoList = async () => {
+      try {
+        const result = await get(child(ref(database), 'todolist'));
+        if (result.exists()) {
+          const tasks = result.val();
+          setToDoList(tasks);
+        } else {
+          console.log('No data available');
+          setToDoList([]);
+        }
+      } catch (err) {
+        console.error('Error trying to get tasks');
+        console.error(err);
+      }
+    };
     getToDoList();
   }, []);
 
-  const getToDoList = async () => {
-    console.log('hello - GET');
-    try {
-      const result = await get(child(ref(database), 'todolist/toDoTask'));
-      if (result.exists()) {
-        console.log(result.val());
-      } else {
-        console.log('No data available');
-      }
-      setToDoTask('');
-    } catch (err) {
-      console.log('Error trying to get tasks');
-      console.log(err);
-    }
-  };
-
   const pushTask = async () => {
-    console.log('hello');
     try {
-      const result = await set(ref(database, 'todolist/'), {
-        task: toDoTask,
-      });
-      setToDoTask('');
+      const tasks = toDoList;
+      tasks.push(inputText);
+      const result = await set(ref(database, 'todolist'), tasks);
+      setToDoList(tasks);
+      setInputText('');
     } catch (err) {
-      console.log('Error trying to save task');
-      console.log(err);
+      console.error('Error trying to save task');
+      console.error(err);
     }
   };
 
   const handleIputText = (taskText) => {
-    setToDoTask(taskText);
-    console.log(taskText);
+    setInputText(taskText);
   };
 
   return (
@@ -53,7 +52,7 @@ function ToDoList() {
       <h1 className={styles.pageTitle}>To-Do List</h1>
       <div className={styles.card}>
         <div>
-          <Input handleIputText={handleIputText} />
+          <Input handleIputText={handleIputText} value={inputText} />
           <SimpleButton
             text="Add"
             color="white"
@@ -62,7 +61,7 @@ function ToDoList() {
           />
         </div>
         <div>
-          <Task text="I will wake up early" />
+          {!!toDoList ? toDoList.map((t) => <Task text={t} key={t} />) : ''}
         </div>
       </div>
     </div>
