@@ -12,23 +12,24 @@ function ToDoList() {
   const [inputText, setInputText] = useState();
 
   useEffect(() => {
-    const getToDoList = async () => {
-      try {
-        const result = await get(child(ref(database), 'todolist'));
-        if (result.exists()) {
-          const tasks = result.val();
-          setToDoList(tasks);
-        } else {
-          console.log('No data available');
-          setToDoList([]);
-        }
-      } catch (err) {
-        console.error('Error trying to get tasks');
-        console.error(err);
-      }
-    };
     getToDoList();
   }, []);
+
+  const getToDoList = async () => {
+    try {
+      const result = await get(child(ref(database), 'todolist'));
+      if (result.exists()) {
+        const tasks = result.val();
+        setToDoList(tasks);
+      } else {
+        console.log('No data available');
+        setToDoList([]);
+      }
+    } catch (err) {
+      console.error('Error trying to get tasks');
+      console.error(err);
+    }
+  };
 
   const pushTask = async () => {
     try {
@@ -39,6 +40,17 @@ function ToDoList() {
       setInputText('');
     } catch (err) {
       console.error('Error trying to save task');
+      console.error(err);
+    }
+  };
+
+  const deleteTask = async (task) => {
+    const newToDoList = toDoList.filter((t) => t !== task);
+    setToDoList(newToDoList);
+    try {
+      const result = await set(ref(database, 'todolist'), toDoList);
+    } catch (err) {
+      console.error('Error trying to save task after deleting a task');
       console.error(err);
     }
   };
@@ -61,7 +73,13 @@ function ToDoList() {
           />
         </div>
         <div>
-          {!!toDoList ? toDoList.map((t) => <Task text={t} key={t} />) : ''}
+          {!!toDoList
+            ? toDoList.map((t) => (
+                <div key={t} onClick={() => deleteTask(t)}>
+                  <Task text={t} key={t} />
+                </div>
+              ))
+            : ''}
         </div>
       </div>
     </div>
